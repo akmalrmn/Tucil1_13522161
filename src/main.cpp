@@ -21,21 +21,30 @@ int main()
         {
             int buffer_size, matrix_width, matrix_height, number_of_sequences;
             inputFile >> buffer_size >> matrix_width >> matrix_height;
-            std::vector<std::vector<int>> matrix(matrix_height, std::vector<int>(matrix_width));
+            std::vector<std::vector<std::string>> matrix(matrix_height, std::vector<std::string>(matrix_width));
             for (int i = 0; i < matrix_height; i++)
             {
                 for (int j = 0; j < matrix_width; j++)
                 {
                     inputFile >> matrix[i][j];
+                    std::cout << matrix[i][j] << " ";
                 }
+                std::cout << "\n";
             }
 
             inputFile >> number_of_sequences;
             std::vector<std::string> sequences(number_of_sequences);
             std::vector<int> rewards(number_of_sequences);
+            std::string line;
             for (int i = 0; i < number_of_sequences; i++)
             {
-                inputFile >> sequences[i] >> rewards[i];
+                while (std::getline(inputFile, line) && line.empty())
+                    ;
+                sequences[i] = line;
+
+                inputFile >> rewards[i];
+                std::cout << "Sequence " << i + 1 << ": " << sequences[i] << "\n";
+                std::cout << "Reward " << i + 1 << ": " << rewards[i] << "\n";
             }
 
             inputFile.close();
