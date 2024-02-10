@@ -5,6 +5,7 @@
 #include <random>
 #include <sstream>
 #include <algorithm>
+#include <set>
 
 // Function prototypes
 int calculateReward(const std::vector<std::string> &path,
@@ -20,7 +21,8 @@ void findPaths(const std::vector<std::vector<std::string>> &matrix,
                const std::vector<std::vector<std::string>> &sequences,
                const std::vector<int> &rewards,
                int &maxReward,
-               bool isVerticalMove);
+               bool isVerticalMove,
+               std::vector<std::vector<bool>> &visited);
 
 void printPaths(const std::vector<std::vector<std::string>> &allPaths,
                 const std::vector<std::vector<std::string>> &sequences,
@@ -44,6 +46,10 @@ int main()
       int buffer_size, matrix_width, matrix_height, number_of_sequences;
       inputFile >> buffer_size >> matrix_width >> matrix_height;
       std::vector<std::vector<std::string>> matrix(matrix_height, std::vector<std::string>(matrix_width));
+
+      // Consume the endline character after reading matrix_height
+      inputFile.ignore();
+
       for (int i = 0; i < matrix_height; i++)
       {
         for (int j = 0; j < matrix_width; j++)
@@ -57,6 +63,10 @@ int main()
       inputFile >> number_of_sequences;
       std::vector<std::vector<std::string>> sequences(number_of_sequences);
       std::vector<int> rewards(number_of_sequences);
+
+      // Consume the endline character after reading number_of_sequences
+      inputFile.ignore();
+
       std::string line;
       for (int i = 0; i < number_of_sequences; i++)
       {
@@ -71,7 +81,7 @@ int main()
 
         inputFile >> rewards[i];
         std::cout << "Sequence " << i + 1 << ": ";
-        for (const std::string &token : sequences[i])
+        for (const auto &token : sequences[i])
         {
           std::cout << token << " ";
         }
@@ -89,8 +99,9 @@ int main()
         // Initialize current path for each starting column
         std::vector<std::string> currentPath;
         int maxReward = 0;
+        std::vector<std::vector<bool>> visited(matrix_height, std::vector<bool>(matrix_width, false));
 
-        findPaths(matrix, buffer_size, 0, col, currentPath, allPaths, sequences, rewards, maxReward, true);
+        findPaths(matrix, buffer_size, 0, col, currentPath, allPaths, sequences, rewards, maxReward, true, visited);
 
         pathRewards.push_back(maxReward);
       }
@@ -167,15 +178,34 @@ int main()
       }
       std::cout << "\n";
     }
-
+    std::set<std::vector<std::string>> unique_sequences;
     for (int i = 0; i < number_of_sequences; i++)
     {
       int sequence_length = dis_seq(gen);
+      std::vector<std::string> sequence;
       for (int j = 0; j < sequence_length; j++)
       {
-        sequences[i].push_back(token[dis(gen)]);
+        sequence.push_back(token[dis(gen)]);
       }
+
+      // Check if the sequence is unique
+      while (unique_sequences.count(sequence) > 0)
+      {
+        // If the sequence is not unique, generate a new one
+        sequence.clear();
+        for (int j = 0; j < sequence_length; j++)
+        {
+          sequence.push_back(token[dis(gen)]);
+        }
+      }
+
+      // Add the unique sequence to the set of unique sequences
+      unique_sequences.insert(sequence);
+
+      // Use the unique sequence
+      sequences[i] = sequence;
       rewards[i] = dis_reward(gen);
+
       std::cout << "\nSequence " << i + 1 << ": ";
       for (const auto &t : sequences[i])
       {
@@ -192,8 +222,10 @@ int main()
       // Initialize current path for each starting column
       std::vector<std::string> currentPath;
       int maxReward = 0;
+      std::vector<std::vector<bool>> visited(matrix_height, std::vector<bool>(matrix_width, false));
 
-      findPaths(matrix, buffer_size, 0, col, currentPath, allPaths, sequences, rewards, maxReward, true);
+      findPaths(matrix, buffer_size, 0, col, currentPath, allPaths, sequences, rewards, maxReward, true, visited);
+
       pathRewards.push_back(maxReward);
     }
 
@@ -236,30 +268,35 @@ int main()
   return 0;
 }
 
-int calculateReward(const std::vector<std::string> &path,
-                    const std::vector<std::vector<std::string>> &sequences,
-                    const std::vector<int> &rewards)
+int calculateReward(const std::vector<std::string> &path, const std::vector<std::vector<std::string>> &sequences, const std::vector<int> &rewards)
 {
   int totalReward = 0;
 
-  for (size_t i = 0; i < sequences.size(); ++i)
+  for (int i = 0; i < sequences.size(); i++)
   {
-    const auto &sequence = sequences[i];
-    bool sequenceFound = true;
-
-    for (const auto &token : sequence)
+    const std::vector<std::string> &sequence = sequences[i];
+    if (sequence.size() > path.size())
     {
-      auto it = std::find(path.begin(), path.end(), token);
-      if (it == path.end())
-      {
-        sequenceFound = false;
-        break;
-      }
+      continue;
     }
 
-    if (sequenceFound)
+    for (int j = 0; j <= path.size() - sequence.size(); j++)
     {
-      totalReward += rewards[i];
+      bool match = true;
+      for (int k = 0; k < sequence.size(); k++)
+      {
+        if (path[j + k] != sequence[k])
+        {
+          match = false;
+          break;
+        }
+      }
+
+      if (match)
+      {
+        totalReward += rewards[i];
+        break;
+      }
     }
   }
 
@@ -275,13 +312,16 @@ void findPaths(const std::vector<std::vector<std::string>> &matrix,
                const std::vector<std::vector<std::string>> &sequences,
                const std::vector<int> &rewards,
                int &maxReward,
-               bool isVerticalMove) // new parameter
+               bool isVerticalMove,
+               std::vector<std::vector<bool>> &visited) // Added visited parameter
 {
-  if (row >= matrix.size() || col < 0 || col >= matrix[0].size())
+  if (row >= matrix.size() || col < 0 || col >= matrix[0].size() || visited[row][col])
   {
-    // Out of bounds, return
+    // Out of bounds or already visited, return
     return;
   }
+
+  visited[row][col] = true; // Mark the current position as visited
 
   currentPath.push_back(matrix[row][col]);
 
@@ -303,20 +343,24 @@ void findPaths(const std::vector<std::vector<std::string>> &matrix,
     if (isVerticalMove)
     {
       // Move to the next row (vertical move)
-      findPaths(matrix, buffer_size, row + 1, col, currentPath, allPaths, sequences, rewards, maxReward, false);
+      findPaths(matrix, buffer_size, row + 1, col, currentPath, allPaths, sequences, rewards, maxReward, false, visited);
+      findPaths(matrix, buffer_size, row - 1, col, currentPath, allPaths, sequences, rewards, maxReward, false, visited);
     }
     else
     {
       // Move to the right (horizontal move)
-      findPaths(matrix, buffer_size, row, col + 1, currentPath, allPaths, sequences, rewards, maxReward, true);
+      findPaths(matrix, buffer_size, row, col + 1, currentPath, allPaths, sequences, rewards, maxReward, true, visited);
 
       // Move to the left (horizontal move)
-      findPaths(matrix, buffer_size, row, col - 1, currentPath, allPaths, sequences, rewards, maxReward, true);
+      findPaths(matrix, buffer_size, row, col - 1, currentPath, allPaths, sequences, rewards, maxReward, true, visited);
     }
   }
 
   // Remove the last element to backtrack
   currentPath.pop_back();
+
+  // Mark the current position as unvisited to allow backtracking
+  visited[row][col] = false;
 }
 
 void printPaths(const std::vector<std::vector<std::string>> &allPaths,
