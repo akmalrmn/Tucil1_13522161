@@ -6,6 +6,7 @@
 #include <sstream>
 #include <algorithm>
 #include <set>
+#include <chrono>
 
 // Function prototypes
 int calculateReward(const std::vector<std::string> &path,
@@ -24,20 +25,16 @@ void findPaths(const std::vector<std::vector<std::string>> &matrix,
                bool isVerticalMove,
                std::vector<std::vector<bool>> &visited);
 
-void printPaths(const std::vector<std::vector<std::string>> &allPaths,
-                const std::vector<std::vector<std::string>> &sequences,
-                const std::vector<int> &rewards);
-
 int main()
 {
   std::cout << "Welcome to Breach Protocol!\n";
-  std::cout << "Do you want to read the input from a file? (y/n): ";
+  std::cout << "Do you want to read the input from a file? (y/n (default n)): ";
   char answer;
   std::cin >> answer;
   if (answer == 'y')
   {
     std::string filename;
-    std::cout << "Enter the name of the file: ";
+    std::cout << "\nEnter the name of the file: ";
     std::cin >> filename;
 
     std::ifstream inputFile(filename);
@@ -46,31 +43,23 @@ int main()
       int buffer_size, matrix_width, matrix_height, number_of_sequences;
       inputFile >> buffer_size >> matrix_width >> matrix_height;
       std::vector<std::vector<std::string>> matrix(matrix_height, std::vector<std::string>(matrix_width));
-
-      // Consume the endline character after reading matrix_height
-      inputFile.ignore();
-
+      // Read matrix
       for (int i = 0; i < matrix_height; i++)
       {
         for (int j = 0; j < matrix_width; j++)
         {
           inputFile >> matrix[i][j];
-          std::cout << matrix[i][j] << " ";
         }
-        std::cout << "\n";
       }
 
       inputFile >> number_of_sequences;
       std::vector<std::vector<std::string>> sequences(number_of_sequences);
       std::vector<int> rewards(number_of_sequences);
-
-      // Consume the endline character after reading number_of_sequences
-      inputFile.ignore();
-
+      // Read Sequences and Rewards
       std::string line;
       for (int i = 0; i < number_of_sequences; i++)
       {
-        while (std::getline(inputFile, line) && line.empty())
+        while (std::getline(inputFile, line) && line.empty()) // Consume newline char
           ;
         std::istringstream iss(line);
         std::string token;
@@ -80,13 +69,6 @@ int main()
         }
 
         inputFile >> rewards[i];
-        std::cout << "Sequence " << i + 1 << ": ";
-        for (const auto &token : sequences[i])
-        {
-          std::cout << token << " ";
-        }
-        std::cout << "\n";
-        std::cout << "Reward " << i + 1 << ": " << rewards[i] << "\n";
       }
 
       inputFile.close();
@@ -94,20 +76,19 @@ int main()
       std::vector<std::vector<std::string>> allPaths;
       std::vector<int> pathRewards;
 
+      auto start = std::chrono::high_resolution_clock::now();
       for (int col = 0; col < matrix_width; col++)
       {
         // Initialize current path for each starting column
         std::vector<std::string> currentPath;
-        int maxReward = 0;
         std::vector<std::vector<bool>> visited(matrix_height, std::vector<bool>(matrix_width, false));
+        int maxReward = 0;
 
         findPaths(matrix, buffer_size, 0, col, currentPath, allPaths, sequences, rewards, maxReward, true, visited);
 
         pathRewards.push_back(maxReward);
       }
-
-      // Print all possible paths and their rewards
-      printPaths(allPaths, sequences, rewards);
+      auto stop = std::chrono::high_resolution_clock::now();
 
       // Find and print the highest reward path
       int maxReward = INT_MIN;
@@ -124,23 +105,24 @@ int main()
       }
 
       // Print the highest reward path
-      std::cout << "Highest Reward Path: ";
+      std::cout << "Total Reward: " << maxReward << "\n";
+      std::cout << "\nHighest Reward Path: ";
       for (const auto &token : highestRewardPath)
       {
         std::cout << token << " ";
       }
-      std::cout << "Total Reward: " << maxReward << "\n";
+      auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+      std::cout << "Execution time: " << duration.count() << " ms\n";
     }
     else
     {
       std::cout << "Unable to open file: " << filename << "\n";
     }
-    std::cout << "The input has been read from the file.\n";
   }
   else
   {
     int buffer_size, matrix_width, matrix_height, number_of_sequences, token_size, maximal_sequence_length;
-    std::cout << "Enter the matrix size (W x H): ";
+    std::cout << "\nEnter the matrix size (W x H): ";
     std::cin >> matrix_width >> matrix_height;
     std::vector<std::vector<std::string>> matrix(matrix_height, std::vector<std::string>(matrix_width));
 
@@ -217,6 +199,7 @@ int main()
     std::vector<std::vector<std::string>> allPaths;
     std::vector<int> pathRewards;
 
+    auto start = std::chrono::high_resolution_clock::now();
     for (int col = 0; col < matrix_width; col++)
     {
       // Initialize current path for each starting column
@@ -228,9 +211,7 @@ int main()
 
       pathRewards.push_back(maxReward);
     }
-
-    // Print all possible paths and their rewards
-    printPaths(allPaths, sequences, rewards);
+    auto stop = std::chrono::high_resolution_clock::now();
 
     // Find and print the highest reward path
     int maxReward = INT_MIN;
@@ -247,22 +228,15 @@ int main()
     }
 
     // Print the highest reward path
+    std::cout << "\nTotal Reward: " << maxReward << "\n";
     std::cout << "Highest Reward Path: ";
     for (const auto &token : highestRewardPath)
     {
       std::cout << token << " ";
     }
-    std::cout << "Total Reward: " << maxReward << "\n";
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
 
-    auto maxRewardIter = std::max_element(pathRewards.begin(), pathRewards.end());
-    int maxRewardIndex = std::distance(pathRewards.begin(), maxRewardIter);
-
-    std::cout << "\nHighest Reward Path: ";
-    for (const auto &token : allPaths[maxRewardIndex])
-    {
-      std::cout << token << " ";
-    }
-    std::cout << "Total Reward: " << *maxRewardIter << "\n";
+    std::cout << "\nExecution time: " << duration.count() << " ms\n";
   }
 
   return 0;
@@ -332,7 +306,7 @@ void findPaths(const std::vector<std::vector<std::string>> &matrix,
   }
 
   // If the current path length is less than or equal to the buffer size, add it to allPaths
-  if (currentPath.size() <= buffer_size)
+  if (currentPath.size() <= buffer_size && currentPath.size() > 1)
   {
     allPaths.push_back(currentPath);
   }
@@ -340,19 +314,22 @@ void findPaths(const std::vector<std::vector<std::string>> &matrix,
   // If the current path length is less than the buffer size, continue exploring
   if (currentPath.size() < buffer_size)
   {
-    if (isVerticalMove)
+    for (int jump = 1; jump < matrix.size(); jump++)
     {
-      // Move to the next row (vertical move)
-      findPaths(matrix, buffer_size, row + 1, col, currentPath, allPaths, sequences, rewards, maxReward, false, visited);
-      findPaths(matrix, buffer_size, row - 1, col, currentPath, allPaths, sequences, rewards, maxReward, false, visited);
-    }
-    else
-    {
-      // Move to the right (horizontal move)
-      findPaths(matrix, buffer_size, row, col + 1, currentPath, allPaths, sequences, rewards, maxReward, true, visited);
+      if (isVerticalMove)
+      {
+        // Move to the next row (vertical move)
+        findPaths(matrix, buffer_size, row + jump, col, currentPath, allPaths, sequences, rewards, maxReward, false, visited);
+        findPaths(matrix, buffer_size, row - jump, col, currentPath, allPaths, sequences, rewards, maxReward, false, visited);
+      }
+      else
+      {
+        // Move to the right (horizontal move)
+        findPaths(matrix, buffer_size, row, col + jump, currentPath, allPaths, sequences, rewards, maxReward, true, visited);
 
-      // Move to the left (horizontal move)
-      findPaths(matrix, buffer_size, row, col - 1, currentPath, allPaths, sequences, rewards, maxReward, true, visited);
+        // Move to the left (horizontal move)
+        findPaths(matrix, buffer_size, row, col - jump, currentPath, allPaths, sequences, rewards, maxReward, true, visited);
+      }
     }
   }
 
@@ -361,20 +338,4 @@ void findPaths(const std::vector<std::vector<std::string>> &matrix,
 
   // Mark the current position as unvisited to allow backtracking
   visited[row][col] = false;
-}
-
-void printPaths(const std::vector<std::vector<std::string>> &allPaths,
-                const std::vector<std::vector<std::string>> &sequences,
-                const std::vector<int> &rewards)
-{
-  for (size_t i = 0; i < allPaths.size(); i++)
-  {
-    std::cout << "Path " << i + 1 << ": ";
-    for (const auto &token : allPaths[i])
-    {
-      std::cout << token << " ";
-    }
-    int reward = calculateReward(allPaths[i], sequences, rewards);
-    std::cout << "Total Reward: " << reward << "\n";
-  }
 }
