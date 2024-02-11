@@ -1,0 +1,10 @@
+Total Reward: 96
+Highest Reward Path: OP K1 J9 K1 K1 B3 
+1, 1
+1, 3
+5, 3
+5, 2
+1, 2
+1, 7
+
+Execution time: 12 ms

@@ -1,0 +1,16 @@
+Total Reward: 65
+Highest Reward Path: 7A 55 55 BD E9 1C BD 7A BD 1C BD 55 
+1, 1
+1, 2
+6, 2
+6, 3
+5, 3
+5, 5
+7, 5
+7, 4
+6, 4
+6, 5
+3, 5
+3, 6
+
+Execution time: 281708 ms
