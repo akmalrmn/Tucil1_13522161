@@ -324,29 +324,33 @@ void findPaths(const std::vector<std::vector<std::string>> &matrix,
 
   currentPath.push_back({matrix[row][col], {row, col}});
 
-  int currentReward = calculateReward(currentPath, sequences, rewards);
-  if (currentReward > maxReward)
-  {
-    maxReward = currentReward;
-    highestRewardPath = currentPath;
-  }
-
   if (currentPath.size() < buffer_size)
   {
     for (int jump = 1; jump < matrix.size(); jump++)
     {
       if (isVerticalMove)
       {
-        findPaths(matrix, buffer_size, row + jump, col, currentPath, sequences, rewards, maxReward, false, visited, highestRewardPath);
-        findPaths(matrix, buffer_size, row - jump, col, currentPath, sequences, rewards, maxReward, false, visited, highestRewardPath);
+        findPaths(matrix, buffer_size, row + jump, col, currentPath, sequences, rewards,
+                  maxReward, false, visited, highestRewardPath);
+        findPaths(matrix, buffer_size, row - jump, col, currentPath, sequences, rewards,
+                  maxReward, false, visited, highestRewardPath);
       }
       else
       {
-        findPaths(matrix, buffer_size, row, col + jump, currentPath, sequences, rewards, maxReward, true, visited, highestRewardPath);
+        findPaths(matrix, buffer_size, row, col + jump, currentPath, sequences, rewards,
+                  maxReward, true, visited, highestRewardPath);
 
-        findPaths(matrix, buffer_size, row, col - jump, currentPath, sequences, rewards, maxReward, true, visited, highestRewardPath);
+        findPaths(matrix, buffer_size, row, col - jump, currentPath, sequences, rewards,
+                  maxReward, true, visited, highestRewardPath);
       }
     }
+  }
+
+  int currentReward = calculateReward(currentPath, sequences, rewards);
+  if (currentReward > maxReward)
+  {
+    maxReward = currentReward;
+    highestRewardPath = currentPath;
   }
 
   currentPath.pop_back();
